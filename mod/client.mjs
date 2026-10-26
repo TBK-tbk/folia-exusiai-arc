@@ -28,6 +28,9 @@ const CSS = `
 .fx-sigil{position:absolute;left:41%;top:52%;width:34vmin;height:34vmin;pointer-events:none;
   mix-blend-mode:screen;opacity:.30;}
 .fx-sigil svg{display:block;width:100%;height:100%;overflow:visible;}
+/* [MOD] 额外维克托法阵：静态、低透明、与主法阵错开位置 */
+.fx-sigil--b{left:52%;top:15%;width:17vmin;height:17vmin;opacity:.12;}
+.fx-sigil--c{left:25%;top:82%;width:18vmin;height:18vmin;opacity:.10;}
 .fx-debris{position:absolute;left:54%;top:12%;width:34%;height:70%;pointer-events:none;
   -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 14%,#000 64%,transparent 92%),
     linear-gradient(180deg,transparent 0%,#000 8%,#000 88%,transparent 100%);
@@ -131,6 +134,7 @@ const CSS = `
 .fx-line::before{content:'';position:absolute;left:-.55em;right:-.55em;top:-.35em;bottom:-.35em;
   background:radial-gradient(60% 60% at 50% 50%, rgba(6,3,3,.55), rgba(6,3,3,0) 78%);
   filter:blur(.4em);z-index:-1;}
+.fx-arc--manual .fx-line{transition:color .4s ease,opacity .3s ease;}   /* 新增：手动翻页时取消位移过渡 */
 .fx-line .ln{display:block;white-space:nowrap;line-height:1.12;}
 .fx-line .ln:only-child{line-height:1;}
 .fx-line .tr{position:absolute;left:0;top:100%;margin-top:.16em;font-size:.46em;font-weight:400;
@@ -196,6 +200,9 @@ const mountStage = (folium, container, ctx) => {
     <div class="fx-radial"><i></i></div>
     <div class="fx-ritual"><svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet"><g class="fx-ritual-g"></g></svg></div>
     <div class="fx-sigil"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><g class="fx-sigil-g"></g></svg></div>
+    <!-- [MOD] 额外维克托法阵 ×2 -->
+    <div class="fx-sigil fx-sigil--b"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><g class="fx-sigil-extra" data-rot="-14" data-glare=".55"></g></svg></div>
+    <div class="fx-sigil fx-sigil--c"><svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"><g class="fx-sigil-extra" data-rot="21" data-glare=".4"></g></svg></div>
     <svg class="fx-dial" xmlns="http://www.w3.org/2000/svg">
       <g class="g-ring"></g>
       <g class="g-big"></g>
@@ -286,6 +293,15 @@ const mountStage = (folium, container, ctx) => {
   let k = 1;
   let currentIndex = -2;
   let lineEls = [];
+  // ===== 新增：歌词滚轮翻页交互开始 =====
+  let lyricScrollOffset = 0;          // 目标偏移（单位：行，可为小数）
+  let currentLyricScrollOffset = 0;   // 实际渲染偏移，每帧向目标靠近
+  let lastScrollTime = 0;             // 最后一次滚轮时间（秒）
+  let isManualScrolling = false;      // 是否处于手动翻页模式
+  const LYRIC_SCROLL_LERP = 0.18;     // 每帧靠近目标的 18%
+  const LYRIC_MANUAL_TIMEOUT = 5;     // 5 秒无操作自动恢复跟随
+  const LYRIC_ZONE = { x0: 0.05, x1: 0.45, y0: 0.15, y1: 0.85 };  // 歌词区归一化边界
+  // ===== 新增：歌词滚轮翻页交互结束 =====
   let fillEl = null;
   let geom = null;
   let gearSpin = 0;
@@ -782,6 +798,42 @@ const mountStage = (folium, container, ctx) => {
     tickEls = Array.from(g.querySelectorAll('.fx-tk'));
   };
 
+
+  // ===== [MOD] 额外维克托法阵 · 静态构建 =====
+  // 与主法阵同一套视觉语言（同心环 + 72 刻度 + 维克托线稿），但不参与旋转/扫描动画
+  const buildSigilExtra = () => {
+    const list = root.querySelectorAll('.fx-sigil-extra');
+    for (let n = 0; n < list.length; n += 1) {
+      const g = list[n];
+      if (g.childElementCount) continue;
+      const rot = parseFloat(g.dataset.rot || '0');
+      const glare = parseFloat(g.dataset.glare || '0.5');
+      const C = 50;
+      const gold = `rgba(234,196,138,${(0.52 * glare).toFixed(2)})`;
+      const dim = `rgba(234,196,138,${(0.28 * glare).toFixed(2)})`;
+      const p = [];
+      p.push(`<circle cx="${C}" cy="${C}" r="46" fill="none" stroke="${dim}" stroke-width=".35"/>`);
+      p.push(`<circle cx="${C}" cy="${C}" r="40" fill="none" stroke="${gold}" stroke-width=".45" stroke-dasharray="18 7"/>`);
+      p.push(`<circle cx="${C}" cy="${C}" r="33" fill="none" stroke="${dim}" stroke-width=".32"/>`);
+      for (let i = 0; i < 72; i += 1) {
+        if (i % 2) continue;                       // 刻度减半，避免过密
+        const a = (i / 72) * Math.PI * 2;
+        const long = i % 12 === 0;
+        const r1 = 33;
+        const r2 = 33 + (long ? 3.4 : 1.6);
+        p.push(`<line x1="${(C + Math.cos(a) * r1).toFixed(2)}" y1="${(C + Math.sin(a) * r1).toFixed(2)}" `
+          + `x2="${(C + Math.cos(a) * r2).toFixed(2)}" y2="${(C + Math.sin(a) * r2).toFixed(2)}" `
+          + `stroke="${long ? gold : dim}" stroke-width=".3"/>`);
+      }
+      p.push(`<g transform="rotate(${rot} ${C} ${C}) translate(${C} ${C}) scale(-1 1) translate(${-C} ${-C})">`
+        + `<image x="13" y="30.2" width="74" height="39.9" preserveAspectRatio="xMidYMid meet" `
+        + `href="${GUN_URL}" opacity="${(0.75 * glare).toFixed(2)}"/>`
+        + `</g>`);
+      g.innerHTML = p.join('');
+    }
+  };
+  // ===== [MOD] 额外维克托法阵 结束 =====
+
   const buildRitual = () => {
     const g = $('.fx-ritual-g');
     if (!g || g.childElementCount) return;
@@ -968,6 +1020,7 @@ const mountStage = (folium, container, ctx) => {
     }
     buildRitual();
     buildSigil();
+    buildSigilExtra();    // [MOD] 额外维克托法阵
     buildParticles();
     buildDebris();
     buildCurtain();
@@ -980,6 +1033,9 @@ const mountStage = (folium, container, ctx) => {
     const lines = ctx.lines || [];
     const outLayer = arc.querySelector('.fx-arc-out');
     [...arc.querySelectorAll('.fx-line')].forEach((el) => {
+      // 只有窗口内（±3 行）的行才做淡出克隆，远处行直接移除
+      const dIdx = Number(el.dataset.idx);
+      if (!Number.isFinite(dIdx) || Math.abs(dIdx - currentIndex) > 3) { el.remove(); return; }
       const ghost = el.cloneNode(true);
       ghost.style.transition = 'opacity .5s ease';
       ghost.style.willChange = 'opacity';
@@ -989,15 +1045,20 @@ const mountStage = (folium, container, ctx) => {
     });
     [...arc.querySelectorAll('.fx-line')].forEach((n) => n.remove());
     lineEls = [];
+    // 手动浏览模式：重建后仍关掉位移过渡，交给每帧插值
+    if (isManualScrolling) arc.classList.add('fx-arc--manual');
     fillEl = null;
     if (!lines.length) return;
 
-    const from = Math.max(0, index - 3);
-    const to = Math.min(lines.length - 1, index + 3);
+    // 全量渲染：从第一行到最后一行，不做窗口裁剪
+    const from = 0;
+    const to = lines.length - 1;
     for (let i = from; i <= to; i += 1) {
       const el = document.createElement('div');
       el.className = 'fx-line';
-      const off = i - index;
+      el.dataset.idx = String(i);   // 新增：记录行号，供每帧重算角度
+      // 重建时沿用当前滚动偏移：手动浏览模式下切歌不会把视图拉回当前行
+      const off = (i - index) - currentLyricScrollOffset;
       const isCurrent = i === index;
       const font = (isCurrent ? 36 : 21) * k;
       el.style.fontSize = `${font}px`;
@@ -1052,6 +1113,8 @@ const mountStage = (folium, container, ctx) => {
       } else {
         el.style.fontWeight = 'var(--fx-w)';
       }
+      // 超出可见弧段的行先设为透明；滚到附近时由每帧逻辑恢复
+      if (Math.abs(off) > 3.4) el.style.opacity = '0';
       arc.appendChild(el);
       lineEls.push(el);
       if (!instant) {
@@ -1067,6 +1130,11 @@ const mountStage = (folium, container, ctx) => {
     needle.style.boxShadow = '0 0 8px rgba(255,90,90,.45)';
 
   };
+
+
+
+
+  // ============================================================
 
   const stepDrum = (time) => {
     const dt = Math.min(0.05, Math.max(0.0015, drum.last ? time - drum.last : 0.016));
@@ -1124,6 +1192,39 @@ const mountStage = (folium, container, ctx) => {
 
   const paint = (time) => {
     const SEC = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    // ===== 新增：歌词滚轮翻页应用开始 =====
+    // 5 秒无滚轮 → 退出手动模式，回到跟随播放
+    if (isManualScrolling && SEC - lastScrollTime > LYRIC_MANUAL_TIMEOUT) {
+      isManualScrolling = false;
+      lyricScrollOffset = 0;
+      arc.classList.remove('fx-arc--manual');
+    }
+    // 手动模式下按当前行重新夹紧，避免播放推进后偏移越界
+    if (isManualScrolling) {
+      const all2 = ctx.lines || [];
+      const minOff2 = -currentIndex;
+      const maxOff2 = all2.length - 1 - currentIndex;
+      lyricScrollOffset = Math.max(minOff2, Math.min(maxOff2, lyricScrollOffset));
+    }
+    // 平滑插值
+    currentLyricScrollOffset += (lyricScrollOffset - currentLyricScrollOffset) * LYRIC_SCROLL_LERP;
+    if (Math.abs(lyricScrollOffset - currentLyricScrollOffset) < 0.002) {
+      currentLyricScrollOffset = lyricScrollOffset;
+    }
+    // 仅在手動翻页时接管每行位置，自动模式下完全不动原有逻辑
+    if (geom && lineEls.length && (isManualScrolling || Math.abs(currentLyricScrollOffset) > 0.002)) {
+      for (let li = 0; li < lineEls.length; li += 1) {
+        const el = lineEls[li];
+        const idx = Number(el.dataset.idx);
+        if (!Number.isFinite(idx)) continue;
+        const off = (idx - currentIndex) - currentLyricScrollOffset;
+        el.style.transform = `rotate(${off * STEP_DEG}deg) translateX(${geom.r}px) translateY(-50%) skewX(-7deg)`;
+        const ad = Math.abs(off);
+        el.style.opacity = ad <= 3.2 ? '1' : Math.max(0, 1 - (ad - 3.2)).toFixed(3);
+      }
+    }
+    // ===== 新增：歌词滚轮翻页应用结束 =====
+
     const lines = ctx.lines || [];
     const cur = lines[currentIndex];
     if (cur && fillEl) {
@@ -1508,6 +1609,35 @@ const mountStage = (folium, container, ctx) => {
   if (!height) layout();
   build(currentIndex, true);
   frame();
+
+
+  // ===== 新增：歌词滚轮翻页交互开始 =====
+  const onLyricWheel = (e) => {
+    if (!root.isConnected) return;
+    const rect = root.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const mx = (e.clientX - rect.left) / rect.width;
+    const my = (e.clientY - rect.top) / rect.height;
+    // 只在歌词区域内接管滚轮
+    if (mx < LYRIC_ZONE.x0 || mx > LYRIC_ZONE.x1 || my < LYRIC_ZONE.y0 || my > LYRIC_ZONE.y1) return;
+    const all = ctx.lines || [];
+    if (!all.length) return;
+    e.preventDefault();
+    e.stopPropagation();
+    // 一格一行，夹在第一行与最后一行之间
+    const step = e.deltaY > 0 ? 1 : -1;
+    const minOff = -currentIndex;
+    const maxOff = all.length - 1 - currentIndex;
+    let next = Math.round(lyricScrollOffset) + step;
+    next = Math.max(minOff, Math.min(maxOff, next));
+    if (next === lyricScrollOffset && isManualScrolling) return;
+    lyricScrollOffset = next;
+    isManualScrolling = true;
+    lastScrollTime = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
+    arc.classList.add('fx-arc--manual');
+  };
+  window.addEventListener('wheel', onLyricWheel, { passive: false });
+  // ===== 新增：歌词滚轮翻页交互结束 =====
 
   ctx.onResize(() => layout());
   ctx.onChange(() => readSettings());

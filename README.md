@@ -1,6 +1,6 @@
 # 圣环 · 弧线（能天使）｜Folia 歌词模组
 
-[![Release](https://img.shields.io/badge/release-v1.2.0-e8c07d?style=flat-square)](https://github.com/TBK-tbk/folia-exusiai-arc/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.3.0-e8c07d?style=flat-square)](https://github.com/TBK-tbk/folia-exusiai-arc/releases/latest)
 [![Folia](https://img.shields.io/badge/Folia-0.7.20%20~%200.7.x-c0392b?style=flat-square)](https://github.com/chthollyphile/folia-major)
 [![License](https://img.shields.io/badge/license-MIT-8a6b3f?style=flat-square)](LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/TBK-tbk/folia-exusiai-arc/total?style=flat-square&label=downloads&color=c0392b)](https://github.com/TBK-tbk/folia-exusiai-arc/releases)
@@ -25,6 +25,8 @@
 
 配套的左侧刻度盘会随低频缓慢转动，右边立绘头顶的光环外面套着一条进度弧，
 唱到哪儿就亮到哪儿。
+
+歌词支持 **滚轮翻看**：鼠标移到左侧歌词区，滚轮上下即可浏览整首歌的全部歌词，手动翻看时切歌不会跳回当前行，停手 5 秒自动回到跟随播放。
 
 除了排版本身，模组还内置 **12 组可独立开关的音频动感效果**（仿真鼓面、刻度脉动、
 环形扫光、辉光呼吸、相位差转动、星尘漂移……），默认只开「仿真鼓面」一项，
@@ -163,12 +165,11 @@
 
 **关于版权**：仓库中的角色与武器素材均来自互联网公开渠道，本项目作者并非版权持有人，
 也无法追溯到原始出处。若您是权利人或其代理人，认为本仓库内容侵犯了您的权益，
-请通过 Issues 联系，我会在收到通知后**尽快移除**相关内容，不设异议。
+请通过 [Issues](https://github.com/TBK-tbk/folia-exusiai-arc/issues) 联系，
+我会在收到通知后 **尽快移除**相关内容，不设异议。
 
 **想完全规避风险？** 可以把 `mod/character.mjs` 和 `mod/gun.mjs` 换成自己的图片 ——
-这两个文件里各自只有一个 base64 data URL，重新生成即可，步骤见 docs/ASSETS.md。
-
-如果这个模组帮到了你，欢迎拿去改、拿去二创，改完记得标注来源即可。
+这两个文件里各自只有一个 base64 data URL，重新生成即可，步骤见 [docs/ASSETS.md](docs/ASSETS.md)。
 
 ---
 
@@ -202,8 +203,8 @@ git push -u origin main
 别人下载解压就能直接放到 `%APPDATA%\Folia\mods\` 使用：
 
 ```bash
-git tag v1.2.0
-git push origin v1.2.0
+git tag v1.3.0
+git push origin v1.3.0
 ```
 
 ---
@@ -240,9 +241,7 @@ A：正常。Folia 用内容摘要校验，改动后需要重新确认一次，�
 
 **Q：设置改完没反应？**
 A：滑块是即时的，开关类效果需要下一次节拍/下一句歌词才看得出来；
-
 如果全部都没反应，确认歌曲正在播放（暂停时所有音频驱动效果都会停）。
 
 **Q：能不能只用歌词排版，不要立绘？**
 A：设置里关掉「显示立绘」即可，圆弧歌词、齿轮盘、光环都会保留。
-
