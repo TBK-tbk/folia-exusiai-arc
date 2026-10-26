@@ -1,0 +1,11 @@
+{
+  "folium": 1,
+  "id": "exusiai-arc",
+  "name": "圣环 · 弧线（能天使）",
+  "version": "1.2.0",
+  "author": "唐渤凯",
+  "description": "歌词沿圆弧排布、左侧齿轮刻度盘、右侧能天使立绘与光环进度环；内置 12 组可选音频动感效果（仿真鼓面、刻度脉动、扫光、辉光呼吸、相位差转动、星尘等）。",
+  "client": "client.mjs",
+  "preview": "preview.jpg",
+  "folia": ">=0.7.20 <0.8.0"
+}
