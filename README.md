@@ -1,7 +1,17 @@
 # 圣环 · 弧线（能天使）｜Folia 歌词模组
 
+[![Release](https://img.shields.io/badge/release-v1.2.0-e8c07d?style=flat-square)](https://github.com/TBK-tbk/folia-exusiai-arc/releases/latest)
+[![Folia](https://img.shields.io/badge/Folia-0.7.20%20~%200.7.x-c0392b?style=flat-square)](https://github.com/chthollyphile/folia-major)
+[![License](https://img.shields.io/badge/license-MIT-8a6b3f?style=flat-square)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/TBK-tbk/folia-exusiai-arc/total?style=flat-square&label=downloads&color=c0392b)](https://github.com/TBK-tbk/folia-exusiai-arc/releases)
+[![Stars](https://img.shields.io/github/stars/TBK-tbk/folia-exusiai-arc?style=flat-square&label=stars&color=e8c07d)](https://github.com/TBK-tbk/folia-exusiai-arc/stargazers)
+
 > 一段圆弧把歌词串起来，左边是一只缓慢转动的齿轮刻度盘，右边是能天使。
 > 光环既是装饰，也是整首歌的进度环。
+
+> **[⬇ 下载最新版](https://github.com/TBK-tbk/folia-exusiai-arc/releases/latest)**
+> 在 Releases 里下载 `Exusiai-Arc-Folium.zip`，解压后把 `mod` 文件夹放进
+> `%APPDATA%\Folia\mods\exusiai-arc\`，重启 Folia 即可。
 
 ![总览](screenshots/01-overview.jpg)
 
